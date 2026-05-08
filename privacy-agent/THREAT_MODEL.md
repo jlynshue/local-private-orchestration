@@ -61,7 +61,7 @@ Every layer fails closed independently. No layer trusts the layer above it.
 - Mitigation: server treats file content as data, not instructions; search logic is parameterized; redactor runs on extracted text. *Status: covered.* Red-team `test_prompt_injection_in_indexed_file_does_not_alter_response` validates that injection doesn't escape the schema.
 
 **T-5. Malicious MCP server replacement.**
-- Mitigation: server runs from a pinned local path (`scripts/launch-privacy-agent.sh`), not `npx`/`uvx`. *Status: partial — file-hash verification on plugin load is not yet implemented; deferred to a future Phase 1 hardening pass.*
+- Mitigation: server runs from a pinned local path (`scripts/launch-privacy-agent.sh`), not `npx`/`uvx`. SHA-256 manifest covers `src/privacy_agent/`, `hooks/`, and the launcher; `privacy_agent.manifest.verify()` runs at SessionStart and on demand via `privacy-cli manifest verify`. Mismatch logs a critical audit event. *Status: covered (Phase 1.5).* Operator workflow in `RUNBOOK.md`; tests in `tests/test_manifest.py`.
 
 **T-6. Argument-level injection (FTS5 syntax, path traversal, control chars).**
 - Mitigation: `SearchEngine._sanitize` strips FTS5 operators; path arguments are not used to construct shell commands; relative_path is resolved through the indexed-files table. *Status: covered.* Red-team parameterizes 7 hostile query strings and 4 hostile path strings.

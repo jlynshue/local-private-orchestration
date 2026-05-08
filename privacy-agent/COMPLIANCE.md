@@ -11,7 +11,7 @@ working artifact for an operator preparing for one.
 | §164.312(a)(2)(i) Unique user identification | M2 per-orchestrator attribution | `audit.orchestrator` field; `PRIVACY_AGENT_ORCHESTRATOR` env binds the identifier at process start |
 | §164.312(a)(2)(iv) Encryption | H5 SQLCipher (when installed) + FileVault dependency | `db.open_db(encryption_key=...)`; key from macOS Keychain |
 | §164.312(b) Audit controls | NFR-AUD-1 hash-chain audit | `audit.AuditLogger` with mandatory SHA-256 chain; verifiable via `privacy-cli audit verify` |
-| §164.312(c)(1) Integrity | NFR-AUD-1 + tamper detection | `verify_chain_integrity()` flags any modification |
+| §164.312(c)(1) Integrity | NFR-AUD-1 + T-5 manifest | `verify_chain_integrity()` flags audit-log tampering; `privacy_agent.manifest.verify()` flags source-code tampering at SessionStart |
 | §164.312(d) Person/entity authentication | Out-of-band consent grants | `privacy-cli consent grant` requires shell access; not granted via the orchestrator session |
 | §164.502(b) "Minimum necessary" | NFR-PRIV-1 + NFR-PRIV-3 + classification filter | Snippet-only by default; PII redacted at index *and* search time; classification cap blocks `restricted` for Goose/Codex |
 | §164.514(b)(2) De-identification | PIIRedactor | SSN, account numbers, phone, email, IP, large dollar amounts removed before any data leaves the daemon |
@@ -33,7 +33,7 @@ contextual PHI (e.g., narrative descriptions of a condition).
 | 10.1 Audit logs | NFR-AUD-1 | All tool invocations + hook decisions land in the same chained log |
 | 10.2.1 All access events recorded | `agent.handle_*` always emits an audit row | Even blocked attempts (`hook_decision="block"`) get logged |
 | 10.5.1 Limit access to audit trails | `db.sqlite` chmod 0600 | `db.open_db()` enforces; `~/.privacy-agent/` recommended chmod 700 in runbook |
-| 10.5.5 File-integrity monitoring on logs | Hash chain | Tampering detected by `verify_chain_integrity()`; flagged at session start |
+| 10.5.5 File-integrity monitoring on logs | Hash chain + T-5 manifest | Audit tampering via `verify_chain_integrity()`; source/hook tampering via `manifest.verify()`; both checked at session start |
 
 **PCI-DSS gap (Phase 2 to address).** Network segmentation (Req. 1) is
 currently "stdio only / no network bind" — this is *strong* segmentation but
@@ -78,7 +78,8 @@ against contemporary threats.
 
 At any point, an operator can produce these artifacts for a compliance review:
 
-- [ ] `privacy-cli audit verify` → integrity attestation (true/false + broken IDs)
+- [ ] `privacy-cli audit verify` → audit-chain integrity attestation
+- [ ] `privacy-cli manifest verify` → source-code integrity attestation (T-5)
 - [ ] `privacy-cli audit recent` → recent access log with attribution
 - [ ] `privacy-cli consent list` → active consents and their expiry
 - [ ] `privacy-cli canary list` → currently-seeded tripwires

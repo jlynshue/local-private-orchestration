@@ -80,16 +80,17 @@ a verifiable artifact (test, file, or runbook step).
 - [x] This `ACCEPTANCE.md` checklist
 - [x] Final acceptance test pass
 
-## Quantitative Phase 1 metrics
+## Quantitative Phase 1 + 1.5 metrics
 
 | Metric | Target | Actual |
 |---|---|---|
-| Total tests | — | **148 passing**, 1 skipped (sqlcipher absent — fallback verified) |
+| Total tests | — | **167 passing** (137 unit + integration, 25 red-team, 5 perf), 1 skipped (sqlcipher absent — fallback verified) |
 | Red-team tests | ≥ 20 attack scenarios | **25** |
 | Canary leakage in red-team sweep | 0 markers | 0 ✓ |
 | PII leakage in red-team sweep | 0 occurrences of corpus PII strings | 0 ✓ |
 | Phase 1 milestones | 10 | 10 ✓ |
-| NFRs covered | 14 | 11 fully, 3 partial (NFR-PORT-1 macOS-only, NFR-PERF-1 not benchmarked, T-5 hash pinning deferred) |
+| Phase 1.5 hardening items | 6 | 6 ✓ (T-5, ADRs, perf noise, mcp pin, deprecation filter, soak monitor) |
+| NFRs covered | 14 | 12 fully, 2 partial (NFR-PORT-1 macOS-only, NFR-PERF-1 baselined). T-5 now covered. |
 
 ## Sequencing principles satisfied
 
@@ -101,11 +102,11 @@ a verifiable artifact (test, file, or runbook step).
 
 These don't block Phase 1 acceptance but must resolve before starting Phase 2:
 
-- **T-5 hardening**: file-hash verification on plugin/server load (deferred)
-- **NFR-PERF-1 baselines**: search p95 / index throughput not yet benchmarked
-- **Open Questions Q-A through Q-G** (integrated-phased-plan.md §6) plus Q-1 through Q-10 from the architecture analysis
-- **30-day soak**: time-based criterion the operator decides on
-- **No unresolved canary hits during soak**: operator confirms via runbook
+- ~~**T-5 hardening**: file-hash verification on plugin/server load (deferred)~~ ✓ Phase 1.5: `privacy_agent.manifest`, `privacy-cli manifest install/verify`, SessionStart enforcement
+- ~~**NFR-PERF-1 baselines**: search p95 / index throughput not yet benchmarked~~ ✓ Phase 1.5: `bench/baseline.committed.json` + median-of-3 runner + per-metric thresholds
+- **Open Questions** Q-A/B/C/D/Q-1 ✓ Phase 1.5 ADRs (`docs/adr/`); soak-window questions Q-2, Q-7, Q-9, Q-F, Q-E, Q-G remain open through soak
+- **30-day soak**: time-based criterion. Soak monitor at `scripts/soak-check.sh` (see `RUNBOOK.md` §"Phase 2 entry soak")
+- **No unresolved canary hits during soak**: surfaced by `soak-check.sh` daily run; failure = incident response per RUNBOOK
 
 ## Sign-off
 
