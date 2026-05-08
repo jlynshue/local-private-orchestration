@@ -76,6 +76,8 @@ If sqlcipher3 is not available, `db.open_db()` falls back to plain SQLite with a
 - `RUNBOOK.md` — first-run setup, daily/weekly tasks, recovery procedures
 - `docs/codex-setup.md` — wire MCP server into Codex CLI
 - `docs/goose-setup.md` — wire MCP server into Goose
+- `design/` — locked-in design artifacts (architecture, enhancements,
+  phased roadmap) that drove the Phase 1 build
 
 ## NFR references
 
