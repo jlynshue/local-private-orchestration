@@ -1,0 +1,34 @@
+{
+  "_comment": "Merge into your project's .claude/settings.json (or ~/.claude/settings.json) under the existing 'permissions' key. The deny rules are Plan A's bypass-prevention list; the allow rules expose only the privacy-agent MCP tools.",
+  "permissions": {
+    "allow": [
+      "mcp__privacy-agent__privacy_search",
+      "mcp__privacy-agent__privacy_index_volume",
+      "mcp__privacy-agent__privacy_list_volumes",
+      "mcp__privacy-agent__privacy_get_consent",
+      "mcp__privacy-agent__privacy_audit_log",
+      "mcp__privacy-agent__privacy_classify",
+      "mcp__privacy-agent__privacy_file_summary"
+    ],
+    "deny": [
+      "mcp__privacy-agent__privacy_read_excerpt",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(less:*)",
+      "Bash(more:*)",
+      "Bash(strings:*)",
+      "Bash(xxd:*)",
+      "Bash(hexdump:*)",
+      "Bash(base64:*)",
+      "Bash(open:*)",
+      "Bash(plutil:*)",
+      "Read(/Volumes/**)",
+      "Read(~/Documents/Tax/**)",
+      "Read(~/Documents/Legal/**)",
+      "Read(~/Documents/Medical/**)",
+      "Read(~/Documents/Finance/**)",
+      "Read(~/.privacy-agent/**)"
+    ]
+  }
+}

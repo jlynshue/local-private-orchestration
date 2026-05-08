@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+*.db
+*.db-wal
+*.db-shm
+.coverage
+data/
+# Perf baseline output — don't commit live runs; baseline.committed.json IS committed.
+bench/baseline.json
+!bench/baseline.committed.json

@@ -1,0 +1,49 @@
+# Default PII regex patterns. Operator can extend via custom YAML.
+# Order matters: longer/more-specific patterns first to avoid greedy mismatches.
+# Match objects render as [REDACTED:TYPE] in output.
+
+patterns:
+  - name: SSN
+    regex: '\b\d{3}-\d{2}-\d{4}\b'
+    severity: high
+
+  # Credit card with separators (must come before bare digit runs)
+  - name: CC
+    regex: '\b(?:\d{4}[\s-]){3}\d{4}\b'
+    severity: high
+
+  # Bare 16-digit credit card
+  - name: CC
+    regex: '\b\d{16}\b'
+    severity: high
+
+  - name: ROUTING
+    regex: '\b\d{9}\b(?=.*account|.*routing)'
+    severity: medium
+
+  - name: ACCOUNT
+    regex: '\b\d{8,12}\b(?=.*account|.*acct)'
+    severity: medium
+
+  # Phone: NANP-style with optional country code
+  - name: PHONE
+    regex: '\b(?:\+?1[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b'
+    severity: low
+
+  - name: EMAIL
+    regex: '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'
+    severity: low
+
+  - name: IP4
+    regex: '\b(?:\d{1,3}\.){3}\d{1,3}\b'
+    severity: low
+
+  - name: AMOUNT
+    regex: '\$\s?[0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?'
+    severity: low
+
+# H7: canary patterns. Separate severity tier; hits raise critical audit events.
+canary_patterns:
+  - name: CANARY
+    regex: 'CANARY-[A-Z0-9]{4,}'
+    severity: critical
