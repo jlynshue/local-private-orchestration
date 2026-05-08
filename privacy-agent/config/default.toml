@@ -1,0 +1,78 @@
+# privacy-agent default configuration.
+# Phase 1 (Crawl): excerpt tool disabled, encryption enabled, canaries on.
+
+[agent]
+snippet_max_chars = 200          # NFR-PERF-2: cap 500
+max_results_per_query = 20
+bind = "stdio"                   # NFR-PORT-1: stdio only
+log_level = "info"
+enable_excerpt_tool = false      # NFR-PRIV-1: opt-in only after Phase 2 H1+M1+H3
+excerpt_max_chars = 500
+
+[volumes]
+allowed = []                      # operator-populated; empty = consent-driven only
+denied = ["/Volumes/TimeMachine"]
+
+[consent]
+default_expiry_hours = 168        # 7 days for search/index
+excerpt_lease_minutes = 30        # M5: stricter window for raw reads
+require_per_file_consent = false
+require_per_volume_consent = true
+
+[classification]
+default_level = "internal"
+
+[[classification.rules]]
+pattern = "*/medical/*"
+level = "restricted"
+
+[[classification.rules]]
+pattern = "*/financial/*"
+level = "confidential"
+
+[[classification.rules]]
+pattern = "*/tax*"
+level = "confidential"
+
+[[classification.rules]]
+pattern = "*/legal/*"
+level = "confidential"
+
+[search]
+fts_enabled = true
+semantic_enabled = false          # Phase 2
+
+[encryption]
+enabled = true                    # H5: day-1 encryption
+key_source = "keychain"
+keychain_account = "privacy-agent-db"
+
+[audit]
+enabled = true
+retention_days = 365
+export_format = "jsonl"
+
+[extractors]
+pdf_enabled = true
+docx_enabled = true
+csv_enabled = true
+json_enabled = true
+image_ocr_enabled = false         # Phase 3
+max_file_size_mb = 100
+
+[canary]
+enabled = true                    # H7
+seed_dir = "~/.privacy-agent/canaries"
+pattern_prefix = "CANARY-"
+
+# M2: per-orchestrator overrides. Goose stricter than Claude Code.
+[profiles.claude_code]
+# inherits all defaults
+
+[profiles.codex]
+enable_excerpt_tool = false
+classification_cap = "confidential"
+
+[profiles.goose]
+enable_excerpt_tool = false
+classification_cap = "internal"

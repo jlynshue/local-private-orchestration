@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0-alpha",
+  "captured_at": "2026-05-04T21:34:24.311706+00:00",
+  "host": {
+    "platform": "macOS-26.2-arm64-arm-64bit-Mach-O",
+    "python": "3.14.3",
+    "machine": "arm64"
+  },
+  "metrics": {
+    "search_latency_ms": {
+      "p50": 3.2403544755652547,
+      "p95": 7.026254793163373,
+      "p99": 11.60645293421112,
+      "mean": 3.271302549401298,
+      "n": 200
+    },
+    "index_throughput": {
+      "files": 200,
+      "elapsed_s": 0.17311958299251273,
+      "files_per_sec": 1155.2708049709768,
+      "bytes_per_sec": 2763962.2954769623
+    },
+    "redactor": {
+      "total_bytes": 297950,
+      "elapsed_ms": 60.23091601673514,
+      "ms_per_kb": 0.2070027118682221,
+      "us_per_call": 602.3091601673514
+    },
+    "audit_write_latency_ms": {
+      "p50": 0.06354149081744254,
+      "p95": 0.15937496500555426,
+      "p99": 0.25351484888233217,
+      "n": 500
+    },
+    "chain_verify_ms": {
+      "entries": 1000,
+      "elapsed_ms": 12.553915963508189
+    }
+  }
+}

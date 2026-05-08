@@ -1,0 +1,17 @@
+{
+  "name": "privacy-agent",
+  "version": "0.1.0-alpha",
+  "description": "Privacy-preserving local search MCP server with consent gates, PII redaction, hash-chain audit, and canary tripwires.",
+  "homepage": "https://example.invalid/privacy-agent",
+  "author": "operator",
+  "license": "MIT",
+  "mcpServers": {
+    "privacy-agent": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/launch-privacy-agent.sh",
+      "args": [],
+      "env": {
+        "PRIVACY_AGENT_ORCHESTRATOR": "claude_code"
+      }
+    }
+  }
+}
