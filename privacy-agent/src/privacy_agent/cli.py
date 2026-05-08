@@ -70,6 +70,23 @@ def _parser() -> argparse.ArgumentParser:
         "--exclude", action="append", default=None, help="exclude glob (repeatable)"
     )
 
+    manifest = sub.add_parser("manifest", help="T-5 file-hash manifest")
+    msub = manifest.add_subparsers(dest="action", required=True)
+    install_p = msub.add_parser("install", help="generate and write manifest")
+    install_p.add_argument(
+        "--output", type=Path, default=None,
+        help="output path (default: ~/.privacy-agent/manifest.sha256)"
+    )
+    verify_p = msub.add_parser("verify", help="verify on-disk files match manifest")
+    verify_p.add_argument(
+        "--manifest", type=Path, default=None,
+        help="manifest path (default: ~/.privacy-agent/manifest.sha256)"
+    )
+    verify_p.add_argument(
+        "--strict", action="store_true",
+        help="fail on unmanifested extra files"
+    )
+
     return p
 
 
@@ -159,6 +176,27 @@ def _cmd_audit(args) -> int:
     return 2
 
 
+def _cmd_manifest(args) -> int:
+    from . import manifest as manifest_mod
+
+    if args.action == "install":
+        out = manifest_mod.install(output_path=args.output)
+        files = manifest_mod.parse(out)
+        print(json.dumps({"installed": str(out), "file_count": len(files)}, indent=2))
+        return 0
+    if args.action == "verify":
+        path = args.manifest or Path("~/.privacy-agent/manifest.sha256").expanduser()
+        ok, mismatches = manifest_mod.verify(
+            path, allow_extras=not args.strict
+        )
+        print(json.dumps(
+            {"valid": ok, "mismatches": mismatches, "manifest": str(path)},
+            indent=2,
+        ))
+        return 0 if ok else 1
+    return 2
+
+
 def _cmd_index(args) -> int:
     a = _agent(args)
     try:
@@ -192,6 +230,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         return _cmd_canary(args)
     if args.cmd == "audit":
         return _cmd_audit(args)
+    if args.cmd == "manifest":
+        return _cmd_manifest(args)
     if args.cmd == "index":
         return _cmd_index(args)
     return 2

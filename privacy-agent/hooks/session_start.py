@@ -52,6 +52,10 @@ def main() -> int:
                 bytes_returned=len(broken),
             )
 
+        # T-5: file-hash manifest verification. Skips silently if no manifest
+        # is installed yet (graceful first-run); fails loud on mismatch.
+        manifest_valid = _verify_manifest(agent, orchestrator)
+
         agent.consent.cleanup_expired()
 
         active = agent.consent.list_active()
@@ -60,17 +64,69 @@ def main() -> int:
             f"[privacy-agent] orchestrator={orchestrator} "
             f"excerpt_tool={excerpt_state} "
             f"active_consents={len(active)} "
-            f"audit_chain={'OK' if valid else 'BROKEN'}\n"
+            f"audit_chain={'OK' if valid else 'BROKEN'} "
+            f"manifest={'OK' if manifest_valid else 'MISMATCH'}\n"
         )
     finally:
         agent.conn.close()
 
     # Echo a small JSON status for downstream consumers (e.g., status line).
     json.dump(
-        {"privacy_agent": {"audit_chain": "ok" if valid else "broken"}},
+        {
+            "privacy_agent": {
+                "audit_chain": "ok" if valid else "broken",
+                "manifest": "ok" if manifest_valid else "mismatch",
+            }
+        },
         sys.stdout,
     )
     return 0
+
+
+def _verify_manifest(agent, orchestrator: str) -> bool:
+    """Return True if manifest verification passes (or is skipped gracefully)."""
+    if os.getenv("PRIVACY_AGENT_SKIP_MANIFEST") == "1":
+        return True
+    try:
+        from pathlib import Path
+        from privacy_agent import manifest
+
+        path = Path(
+            os.getenv(
+                "PRIVACY_AGENT_MANIFEST",
+                "~/.privacy-agent/manifest.sha256",
+            )
+        ).expanduser()
+        if not path.exists():
+            sys.stderr.write(
+                "[privacy-agent] WARNING: no manifest installed at "
+                f"{path}. Run `privacy-cli manifest install` to enable T-5 "
+                "file-hash verification.\n"
+            )
+            return True  # graceful first-run; not a mismatch
+        ok, mismatches = manifest.verify(path)
+        if not ok:
+            sys.stderr.write(
+                "[privacy-agent] CRITICAL: manifest verification FAILED. "
+                f"{len(mismatches)} mismatch(es): {', '.join(mismatches[:5])}"
+                f"{'...' if len(mismatches) > 5 else ''}\n"
+                "Run `privacy-cli manifest verify` for full output, then "
+                "either roll back the modified files or "
+                "`privacy-cli manifest install` to accept them.\n"
+            )
+            agent.audit.log(
+                "manifest_mismatch",
+                orchestrator=orchestrator,
+                severity="critical",
+                data_returned="metadata_only",
+                bytes_returned=len(mismatches),
+            )
+        return ok
+    except Exception as e:
+        sys.stderr.write(
+            f"[privacy-agent] WARNING: manifest verification errored: {e}\n"
+        )
+        return True  # don't block on infrastructure failure
 
 
 if __name__ == "__main__":

@@ -200,6 +200,72 @@ Quick smoke test that everything still works:
   Goose); usually visible in those tools' debug logs
 - SessionStart hook stderr: shown in Claude Code's status notifications
 
+## Phase 2 entry soak
+
+Phase 2 begins only after a 30-day soak window with four gates green
+(per `docs/adr/` plus Q-G in `design/integrated-phased-plan.md`). Use
+`scripts/soak-check.sh` to instrument it.
+
+### Start the soak
+
+```bash
+.venv/bin/privacy-cli manifest install         # T-5 baseline
+bash scripts/soak-check.sh --start             # records start timestamp
+```
+
+### Daily check (cron-friendly)
+
+```bash
+bash scripts/soak-check.sh                     # daily: audit + canary + usage
+```
+
+Wire into launchd or cron, e.g. daily at 09:00:
+
+```
+0 9 * * * /usr/bin/env bash /path/to/scripts/soak-check.sh
+```
+
+### Weekly check (adds the harness)
+
+```bash
+bash scripts/soak-check.sh --weekly            # same plus tests/redteam/
+```
+
+### Status check
+
+```bash
+bash scripts/soak-check.sh --summary           # GO / NOGO decision
+```
+
+The summary reports days elapsed, audit-chain status, canary hits since
+start, usage days (≥10 non-manual searches required), and last harness
+run. Phase 2 entry requires all four gates green AND ≥30 days elapsed.
+
+### What "GO" means
+
+When the summary prints `DECISION: GO ✓ ready for Phase 2`:
+
+1. The audit chain has been verified valid every day with zero broken entries
+2. No canary marker has appeared in any audit row since the soak began
+3. The system has actually carried real workload (not idle): ≥10 days with
+   at least one search from a non-`manual` orchestrator
+4. The red-team harness has re-passed in the recent run
+
+At that point you can begin Phase 2 M2.1 work (H1 local-LLM redaction gate).
+
+### What "NOGO" means
+
+Keep the soak running. Common reasons for NOGO:
+
+- **Audit chain broken** — incident, investigate immediately
+- **Canary hit** — the strongest signal of privacy-boundary failure;
+  start incident response
+- **Insufficient usage** — the system's been idle. Either use it more,
+  or accept that the soak metric is checking the wrong thing for your
+  workflow and document the deviation
+- **Harness regression** — likely a dependency upgrade broke something;
+  re-run, investigate, fix, re-pass
+
 ## Upgrade path to Phase 2
 
 When you're ready to enable the excerpt tool:
