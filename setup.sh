@@ -65,9 +65,14 @@ else
   fi
 fi
 
-# ---- 4. smoke check ----
+# ---- 4. T-5 manifest install ----
+hdr "Installing T-5 file-hash manifest"
+"$PY" -m privacy_agent.cli manifest install >/dev/null && ok "manifest installed at ~/.privacy-agent/manifest.sha256"
+
+# ---- 5. smoke check ----
 hdr "Smoke check"
 "$PY" -m privacy_agent.cli audit verify >/dev/null && ok "audit chain initializes cleanly"
+"$PY" -m privacy_agent.cli manifest verify >/dev/null && ok "manifest verifies cleanly"
 "$PY" -c "from privacy_agent.server import register_tools" && ok "server module imports"
 
 hdr "Done"

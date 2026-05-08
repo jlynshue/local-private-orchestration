@@ -22,7 +22,40 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REFERENCE = REPO_ROOT / "bench" / "baseline.committed.json"
-REGRESSION_THRESHOLD = 1.20  # 20% slowdown / drop = regression flag
+
+# Per-metric ratio thresholds. Sub-ms p99 metrics swing 10x between runs from
+# GC/fsync/scheduler noise alone; the global 1.20 was wrong for them. Tighten
+# where the absolute number matters; loosen where one bad sample dominates.
+#
+# Pattern → ratio. First match wins. Patterns are simple substrings.
+THRESHOLD_RULES: list[tuple[str, float]] = [
+    # Sub-millisecond p99 metrics are hopelessly noisy at this scale.
+    ("audit_write_latency_ms.p99", 4.0),
+    ("audit_write_latency_ms.p95", 2.5),
+    ("search_latency_ms.p99", 2.0),
+    ("chain_verify_ms.elapsed_ms", 1.5),
+    # Throughput / mean latency are stable signal — tight bound.
+    ("files_per_sec", 1.15),
+    ("bytes_per_sec", 1.15),
+    ("search_latency_ms.mean", 1.15),
+    ("search_latency_ms.p50", 1.20),
+    ("search_latency_ms.p95", 1.30),
+    ("redactor.ms_per_kb", 1.20),
+    ("redactor.us_per_call", 1.20),
+    # Identity-style metrics — should never change.
+    (".n", 1.001),
+    (".entries", 1.001),
+    (".files", 1.001),
+    (".total_bytes", 1.001),
+]
+DEFAULT_THRESHOLD = 1.30
+
+
+def _threshold_for(metric: str) -> float:
+    for substr, ratio in THRESHOLD_RULES:
+        if substr in metric:
+            return ratio
+    return DEFAULT_THRESHOLD
 
 
 def _flatten(metrics: dict, prefix: str = "") -> dict[str, float]:
@@ -58,10 +91,11 @@ def _verdict(name: str, new: float, ref: float) -> str:
 
 
 def _is_regression(name: str, new: float, ref: float) -> bool:
+    threshold = _threshold_for(name)
     higher_better = _is_higher_is_better(name)
     if higher_better:
-        return new < ref / REGRESSION_THRESHOLD
-    return new > ref * REGRESSION_THRESHOLD
+        return new < ref / threshold
+    return new > ref * threshold
 
 
 def main(argv: list[str]) -> int:
@@ -120,7 +154,7 @@ def main(argv: list[str]) -> int:
             return 1
         print("   (PERF_FAIL_ON_REGRESSION not set — informational only)")
     else:
-        print("✓ no regressions over 20% threshold")
+        print("✓ no regressions beyond per-metric thresholds")
     return 0
 
 

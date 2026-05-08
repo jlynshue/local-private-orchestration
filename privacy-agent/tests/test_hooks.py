@@ -129,3 +129,21 @@ def test_session_start_runs_and_exits_zero():
     assert code == 0
     # Stderr summary is present.
     assert "privacy-agent" in err
+
+
+def test_session_start_warns_on_missing_manifest(monkeypatch, tmp_path):
+    """First-run path: no manifest installed yet → graceful warning, exit 0."""
+    import os
+    env = os.environ.copy()
+    env["PRIVACY_AGENT_MANIFEST"] = str(tmp_path / "nonexistent.sha256")
+    proc = subprocess.run(
+        [sys.executable, str(HOOKS_DIR / "session_start.py")],
+        input="{}",
+        capture_output=True,
+        text=True,
+        timeout=10,
+        env=env,
+    )
+    # Graceful first-run: hook exits 0 even without a manifest.
+    assert proc.returncode == 0
+    assert "no manifest installed" in proc.stderr

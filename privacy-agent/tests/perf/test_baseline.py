@@ -260,5 +260,15 @@ def _flush_baseline_at_session_end():
         },
         "metrics": _results,
     }
-    BASELINE_PATH.write_text(json.dumps(payload, indent=2))
-    print(f"\n[perf] baseline written → {BASELINE_PATH.relative_to(REPO_ROOT)}")
+    # PERF_BASELINE_OUTPUT lets the multi-run orchestrator write each run to
+    # a distinct file; default behavior matches single-run usage.
+    import os
+    output_env = os.getenv("PERF_BASELINE_OUTPUT")
+    output_path = Path(output_env) if output_env else BASELINE_PATH
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(payload, indent=2))
+    try:
+        rel = output_path.relative_to(REPO_ROOT)
+    except ValueError:
+        rel = output_path
+    print(f"\n[perf] baseline written → {rel}")
