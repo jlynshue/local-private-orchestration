@@ -1,0 +1,19 @@
+# ${AGENT_NAME_HUMAN} default config
+
+[agent]
+bind = "stdio"
+log_level = "info"
+snippet_max_chars = 200
+max_results_per_query = 20
+enable_excerpt_tool = false
+
+[consent]
+default_expiry_hours = 168
+require_per_scope_consent = true
+
+[audit]
+enabled = true
+retention_days = 365
+
+# Per-orchestrator profiles
+${PROFILE_ENTRIES}
