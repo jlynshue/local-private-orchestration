@@ -9,6 +9,36 @@
 
 ---
 
+## Why This Exists
+
+Modern AI coding agents — Claude Code, Codex, Cursor, Goose — operate by indexing your filesystem and feeding file contents to cloud LLMs. This is powerful, but there is no privacy boundary between the agent's tool calls and your sensitive data. A single `cat ~/.ssh/id_rsa`, an accidental `grep` that matches a tax return, or a search snippet containing an SSN is irreversible the moment it hits a remote API. The data is logged, cached, and potentially trainable. You cannot un-send it.
+
+Existing mitigations are binary: either you exclude entire directories from the agent (crippling its utility) or you trust the vendor's data retention policy and hope nothing sensitive leaks through tool output. Neither option is acceptable when your filesystem contains client contracts, medical records, credentials, or financial documents alongside the code you actually want the AI to help with.
+
+This project implements 8 independent defense layers — from `settings.json` deny rules and pre-tool-use hooks down to PII regex redaction, consent gates, and a tamper-proof audit chain — that sit between the orchestrator and your files. Each layer fails closed independently. The result: AI agents can search and summarize your local documents while PII, secrets, and sensitive content are scrubbed before any byte crosses the local-to-cloud boundary. No utility sacrifice, no trust assumptions.
+
+---
+
+## Example Usage
+
+```bash
+$ privacy-cli index ~/Documents
+Indexed 2,847 files (1.2 GB) in 4.3s
+PII detected: 12 files flagged (SSN: 3, email: 7, phone: 2)
+
+$ privacy-cli search "tax returns 2024"
+3 results (redacted snippets):
+  1. ~/Documents/taxes/2024-return.pdf — "Federal return for [REDACTED_SSN] filed..."
+  2. ~/Documents/taxes/w2-2024.pdf — "Employer: Acme Corp, wages: $[REDACTED]..."
+  3. ~/Documents/taxes/1099-2024.pdf — "Non-employee compensation from [REDACTED]..."
+
+$ privacy-cli audit verify
+✓ Chain integrity: 847 entries, no gaps
+✓ Last verification: 2026-06-11T14:22:00Z
+```
+
+---
+
 ## The Problem
 
 Modern AI agents are powerful — until you need them to search your files. The moment you expose raw files to cloud LLMs, you leak:
