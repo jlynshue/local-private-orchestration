@@ -37,6 +37,102 @@ $ privacy-cli audit verify
 ✓ Last verification: 2026-06-11T14:22:00Z
 ```
 
+### MCP Integration
+
+Add to your orchestrator's MCP config (Claude Code, Codex, Goose, etc.):
+
+```json
+{
+  "mcpServers": {
+    "privacy-agent": {
+      "command": "python",
+      "args": ["-m", "privacy_agent.server"],
+      "env": {
+        "PRIVACY_AGENT_DIR": "~/Documents",
+        "PRIVACY_AGENT_CONFIG": "~/.privacy-agent/config.toml",
+        "PRIVACY_AGENT_DB": "~/.privacy-agent/privacy.db"
+      }
+    }
+  }
+}
+```
+
+The orchestrator can then call tools like `privacy_search`, `privacy_file_summary`, `privacy_classify` — all responses pass through the 8-layer defense pipeline before reaching the AI model.
+
+### Consent Workflow (Out-of-Band)
+
+Consent grants are managed via the CLI, **never** through the orchestrator session. This prevents prompt-injection attacks from escalating privileges:
+
+```bash
+# Grant search access to ~/Documents for 1 hour
+$ privacy-cli consent grant --path ~/Documents --scope search --granularity volume --window-seconds 3600
+{"granted": "c-7f3a...", "expires_at": "2026-06-11T15:22:00Z"}
+
+# The orchestrator requests consent — gets instructions, not a prompt
+$ # (inside MCP session) privacy_get_consent(path="~/Documents", scope="read", request=True)
+# → {"status": "denied", "instructions": "Run: privacy-cli consent grant --path ..."}
+
+# Revoke when done
+$ privacy-cli consent revoke --id c-7f3a...
+{"revoked": true}
+```
+
+### Canary Honeytokens
+
+Detect if an orchestrator bypasses the privacy boundary:
+
+```bash
+# Plant canary files that look like real sensitive data
+$ privacy-cli canary seed --dir ~/.privacy-agent/canaries --count 5
+{"seeded": [{"id": "canary-a1b2", "path": "/Users/you/.privacy-agent/canaries/tax_2024.txt"}, ...]}
+
+# If any tool output contains canary markers, the PostToolUse hook fires a
+# critical audit entry — proof that the defense perimeter was breached.
+```
+
+### Audit Verification
+
+```bash
+# Verify the tamper-proof hash chain
+$ privacy-cli audit verify
+{"valid": true, "broken_entry_ids": []}
+
+# View recent activity
+$ privacy-cli audit recent
+[
+  {"ts": "2026-06-11T14:20:01Z", "action": "search", "orchestrator": "claude-code",
+   "severity": "info", "redactions": 3, "bytes": 1847},
+  ...
+]
+```
+
+### Source Integrity Check
+
+```bash
+# Generate a SHA-256 manifest of all agent source files
+$ privacy-cli manifest install
+{"installed": "/Users/you/.privacy-agent/manifest.sha256", "file_count": 42}
+
+# Verify no source files have been tampered with
+$ privacy-cli manifest verify --strict
+{"valid": true, "mismatches": [], "manifest": "/Users/you/.privacy-agent/manifest.sha256"}
+```
+
+---
+
+## Security Model
+
+Every tool call passes through 8 independent, fail-closed layers:
+
+1. **Settings denial** — blocked paths/patterns in `settings.json` never reach the agent
+2. **PreToolUse hook** — regex inspection of tool parameters catches compound shell bypasses (e.g., `cat /Volumes/Backup/Tax/...` piped through Bash)
+3. **Consent gate** — per-scope, time-windowed leases managed out-of-band via CLI; the orchestrator cannot self-grant
+4. **Classification filter** — 4-level path classification (public/sensitive/confidential/restricted) with per-orchestrator access ceilings
+5. **Return-schema whitelist** — only approved fields (snippets, metadata, counts) appear in MCP responses; raw file content is never exposed
+6. **PII redactor** — YAML-configurable regex + heuristic detection replaces SSNs, credit cards, API keys, emails, and phone numbers with `[REDACTED_*]` tokens
+7. **PostToolUse safety net** — scans tool output for canary markers and residual PII; fires critical audit entries on breach detection
+8. **Audit chain** — SHA-256 hash-linked, append-only log records every tool call, consent decision, and policy violation with tamper-evident integrity
+
 ---
 
 ## The Problem
