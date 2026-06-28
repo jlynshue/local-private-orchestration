@@ -84,7 +84,7 @@ a verifiable artifact (test, file, or runbook step).
 
 | Metric | Target | Actual |
 |---|---|---|
-| Total tests | — | **167 passing** (137 unit + integration, 25 red-team, 5 perf), 1 skipped (sqlcipher absent — fallback verified) |
+| Total tests | — | **182 passing** (152 unit + integration, 25 red-team, 5 perf), 1 skipped (sqlcipher absent — fallback verified) |
 | Red-team tests | ≥ 20 attack scenarios | **25** |
 | Canary leakage in red-team sweep | 0 markers | 0 ✓ |
 | PII leakage in red-team sweep | 0 occurrences of corpus PII strings | 0 ✓ |
