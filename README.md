@@ -2,10 +2,12 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-182%20passing-brightgreen)](privacy-agent/tests/)
+[![CI](https://github.com/jlynshue/local-private-orchestration/actions/workflows/ci.yml/badge.svg)](https://github.com/jlynshue/local-private-orchestration/actions/workflows/ci.yml)
 [![MCP](https://img.shields.io/badge/MCP-1.0%2B-purple)](https://modelcontextprotocol.io)
 
 > **Privacy-preserving AI agent that keeps your data local.** Detect and redact PII before AI agents touch your files.
+
+> This repository ships the **Privacy-Agent** module (all code lives under [`privacy-agent/`](privacy-agent/)).
 
 ---
 
@@ -200,7 +202,7 @@ Existing solutions are all-or-nothing: either lock the AI out entirely, or send 
   Optional SQLCipher with Keychain-backed key storage. Database enforces 0600 permissions and WAL journaling.
 
 - **✅ Comprehensive Testing**  
-  148+ unit tests, 25 adversarial red-team tests, perf benchmarks, and a threat model validated against HIPAA, PCI-DSS, and GDPR.
+  152 unit + integration tests, 25 adversarial red-team tests, 5 perf benchmarks, and a threat model validated against HIPAA, PCI-DSS, and GDPR.
 
 ---
 
@@ -226,19 +228,21 @@ pip install -e ".[encryption]"
 pytest
 ```
 
-Output:
+Output (bare `pytest` runs the full suite — unit + integration + red-team + perf):
 ```
-collected 173 items
+tests/test_redactor.py ..........................          (26)
+tests/test_search.py ..........                            (10)
+tests/test_classifier.py .......                            (7)
+tests/test_consent.py ............                         (12)
+tests/test_audit.py .........                               (9)
+... (14 unit/integration modules total)
+tests/redteam/test_invariants.py .........................  (25)
+tests/perf/test_baseline.py .....                            (5)
 
-test_redactor.py ...................... [ 10%]
-test_search.py ........................ [ 25%]
-test_classifier.py .................... [ 35%]
-test_consent.py ....................... [ 45%]
-test_audit.py ......................... [ 60%]
-redteam/test_invariants.py ............ [100%]
-
-173 passed in 5.21s
+182 passed, 1 skipped in 8.10s
 ```
+
+(The 1 skip is `test_sqlcipher_round_trip`, which requires the optional `sqlcipher3-binary` extra.)
 
 ### 3. Index a Volume
 
@@ -303,7 +307,7 @@ See `privacy-agent/docs/` for per-orchestrator setup guides.
 ## Testing & Validation
 
 ### Test Suite
-- **137 unit + integration tests** — core logic, database, indexing, search, consent, audit
+- **152 unit + integration tests** — core logic, database, indexing, search, consent, audit
 - **25 red-team adversarial tests** — invariant checking, response-schema validation, tampering detection
 - **5 perf benchmarks** — baseline search/index times + comparison tooling
 - **All tests green** — run locally before commit, gated in CI
