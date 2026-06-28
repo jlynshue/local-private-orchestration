@@ -1,8 +1,78 @@
-# Default PII regex patterns. Operator can extend via custom YAML.
+# Default PII + secret/credential regex patterns. Operator can extend via custom YAML.
 # Order matters: longer/more-specific patterns first to avoid greedy mismatches.
 # Match objects render as [REDACTED:TYPE] in output.
 
 patterns:
+  # ------------------------------------------------------------------ SECRETS
+  # Secrets/credentials come FIRST: they are the highest-severity leak and the
+  # PEM full-block match must run before any sub-pattern can chew into the body.
+  # These make the "scrub sensitive data crossing the MCP boundary" guarantee
+  # cover machine credentials (cloud keys, tokens, private keys), not just human
+  # PII — without them, AWS/GitHub/OpenAI/Google keys + PEM blocks pass through
+  # un-redacted.
+
+  # Private-key PEM block (RSA / EC / OPENSSH / DSA / PGP / PKCS8). Match the
+  # whole armored block — [\s\S] spans newlines without needing the DOTALL flag,
+  # which the engine's _compile does not expose. Non-greedy so adjacent blocks
+  # don't collapse into one match. Run before everything else.
+  - name: PRIVATE_KEY
+    regex: '-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |DSA |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY-----'
+    severity: high
+
+  # Bare PEM private-key header (in case only the header line is present, e.g.
+  # truncated logs). Caught after the full block so complete blocks redact whole.
+  - name: PRIVATE_KEY
+    regex: '-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY-----'
+    severity: high
+
+  # AWS access key id (long-term AKIA, temporary ASIA). 16 trailing base32 chars.
+  - name: AWS_ACCESS_KEY_ID
+    regex: '\b(?:AKIA|ASIA)[0-9A-Z]{16}\b'
+    severity: high
+
+  # AWS secret access key — a bare 40-char base64 token is too generic to match
+  # safely on its own, so anchor on an aws/secret assignment context. The whole
+  # "aws_secret... = <key>" expression is redacted (over-redacting the label is
+  # acceptable; the 40-char secret value is what must not leak).
+  - name: AWS_SECRET_ACCESS_KEY
+    regex: 'aws_?(?:secret_?access_?key|secret)["'']?\s*[:=]\s*["'']?[A-Za-z0-9/+]{40}'
+    severity: high
+    ignore_case: true
+
+  # GitHub tokens: classic PATs (ghp_), OAuth (gho_), user-to-server (ghu_),
+  # server-to-server (ghs_), refresh (ghr_), plus fine-grained (github_pat_).
+  - name: GITHUB_TOKEN
+    regex: '\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36,}\b'
+    severity: high
+
+  - name: GITHUB_TOKEN
+    regex: '\bgithub_pat_[A-Za-z0-9_]{22,}\b'
+    severity: high
+
+  # OpenAI / Anthropic style secret keys: sk-... and sk-proj-... (and sk-ant-...).
+  # 20+ char suffix to avoid matching short "sk-" lookalikes.
+  - name: OPENAI_KEY
+    regex: '\bsk-(?:proj-|ant-)?[A-Za-z0-9_-]{20,}\b'
+    severity: high
+
+  # Google API key: AIza + 35 url-safe base64 chars.
+  - name: GOOGLE_API_KEY
+    regex: '\bAIza[0-9A-Za-z_-]{35}\b'
+    severity: high
+
+  # Slack tokens: xoxb/xoxa/xoxp/xoxr/xoxs-...
+  - name: SLACK_TOKEN
+    regex: '\bxox[baprs]-[A-Za-z0-9-]{10,}\b'
+    severity: high
+
+  # Generic bearer / authorization token: anchored on the keyword so we only
+  # fire on an actual credential carrier, not arbitrary high-entropy strings.
+  - name: BEARER_TOKEN
+    regex: '(?:bearer|authorization)\s*[:=]?\s*["'']?[A-Za-z0-9._~+/-]{20,}={0,2}'
+    severity: high
+    ignore_case: true
+
+  # ------------------------------------------------------------------ PII
   - name: SSN
     regex: '\b\d{3}-\d{2}-\d{4}\b'
     severity: high

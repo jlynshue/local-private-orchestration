@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-173%20passing-brightgreen)](privacy-agent/tests/)
+[![Tests](https://img.shields.io/badge/Tests-182%20passing-brightgreen)](privacy-agent/tests/)
 [![MCP](https://img.shields.io/badge/MCP-1.0%2B-purple)](https://modelcontextprotocol.io)
 
 > **Privacy-preserving AI agent that keeps your data local.** Detect and redact PII before AI agents touch your files.
@@ -368,7 +368,7 @@ See [`privacy-agent/design/integrated-phased-plan.md`](privacy-agent/design/inte
 
 **All Phase 1 + 1.5 milestones shipped.**
 
-- ✅ 173 tests passing (137 unit + integration, 25 red-team, 5 perf)
+- ✅ 182 tests passing (152 unit + integration, 25 red-team, 5 perf)
 - ✅ Threat model validated
 - ✅ HIPAA/PCI-DSS/GDPR mapping documented
 - ✅ Runbook + first-run setup complete

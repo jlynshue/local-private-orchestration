@@ -4,7 +4,7 @@ Privacy-preserving local orchestration MCP daemon. Implements Phase 1 (Crawl) of
 
 ## Status
 
-**Phase 1 + 1.5 complete.** All 10 Phase 1 sub-milestones (M1.1–M1.10) shipped, plus the Phase 1.5 hardening sprint: T-5 file-hash manifest, 5 blocker ADRs, perf-comparison noise tolerance, 30-day soak monitor. 167 tests passing (137 unit + integration, 25 red-team, 5 perf). Excerpt tool disabled by default (Sequencing Principle 3); flips on only after Phase 2 lands H1+H3+M1.
+**Phase 1 + 1.5 complete.** All 10 Phase 1 sub-milestones (M1.1–M1.10) shipped, plus the Phase 1.5 hardening sprint: T-5 file-hash manifest, 5 blocker ADRs, perf-comparison noise tolerance, 30-day soak monitor. 182 tests passing (152 unit + integration, 25 red-team, 5 perf). Excerpt tool disabled by default (Sequencing Principle 3); flips on only after Phase 2 lands H1+H3+M1.
 
 See `ACCEPTANCE.md` for the per-milestone exit-criteria checklist.
 
@@ -46,7 +46,7 @@ privacy-agent/
 │   ├── default.toml
 │   └── default_pii_patterns.yaml
 └── tests/
-    ├── test_*.py         137 unit + integration tests
+    ├── test_*.py         152 unit + integration tests
     └── redteam/          25 adversarial harness tests (M1.9)
 ```
 
